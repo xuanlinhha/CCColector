@@ -3,11 +3,10 @@ package http;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -18,39 +17,36 @@ import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
-import com.google.gson.Gson;
+public class GifPathExtractor {
+	private static String URL = "https://www.chineseconverter.com/en/convert/chinese-stroke-order-tool";
 
-public class GifNameGetter {
-	private static String URL = "http://hvdic.thivien.net/query-dict.json.php";
-
-	public static String getGifName(Character c) {
+	public static List<String> extractGifPaths(String text) {
+		List<String> result = new ArrayList<String>();
 		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpPost post = new HttpPost(URL);
 			List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-			urlParameters.add(new BasicNameValuePair("Value", c.toString()));
-			urlParameters.add(new BasicNameValuePair("Mode", "2"));
-			urlParameters.add(new BasicNameValuePair("Lang", "2"));
-			urlParameters.add(new BasicNameValuePair("Page", "0"));
+			urlParameters.add(new BasicNameValuePair("text", text));
+			urlParameters.add(new BasicNameValuePair("speed", "normal"));
 			post.setEntity(new UrlEncodedFormEntity(urlParameters, "UTF-8"));
 			HttpResponse response = client.execute(post);
 			BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-			StringBuffer result = new StringBuffer();
+			StringBuffer html = new StringBuffer();
 			String line = "";
 			while ((line = rd.readLine()) != null) {
-				result.append(line);
-				Gson gson = new Gson();
-				JsonData jsonData = gson.fromJson(result.toString(), JsonData.class);
-				Document doc = Jsoup.parse(jsonData.getHtml());
-				Element ani = doc.select("img").first();
-				Path path = Paths.get(ani.attr("data-original"));
-				return path.getFileName().toString();
+				html.append(line);
+			}
+			Document doc = Jsoup.parse(html.toString());
+			Elements strokeElements = doc.select("img[class=stroke_order]");
+			for (Element e : strokeElements) {
+				result.add(StringEscapeUtils.unescapeHtml4(e.attr("data-original")));
 			}
 		} catch (IOException e) {
 			System.out.println("Error in GifNameGetter.getGifName function!");
 			e.printStackTrace();
 		}
-		return "";
+		return result;
 	}
 }

@@ -9,8 +9,8 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 
-public class InputReader {
-	public static Set<Character> readChars(String input) {
+public class CCReader {
+	public static String readChars(String input) {
 		String text = "";
 		try {
 			text = FileUtils.readFileToString(new File(input));
@@ -25,6 +25,11 @@ public class InputReader {
 				cs.add(c);
 			}
 		}
-		return cs;
+		StringBuilder postText = new StringBuilder();
+		for (Character c : cs) {
+			postText.append(c);
+		}
+		return postText.toString();
 	}
+
 }
